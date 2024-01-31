@@ -1,5 +1,5 @@
 import sqlite3
-import psycopg2
+
 import os
 import streamlit as st
 from pydantic import BaseModel
@@ -14,7 +14,7 @@ if DB_CONFIG == 'PG':
     PG_PASSWORD = os.getenv("PG_PASSWORD")
     PG_HOST = os.getenv("PG_HOST")
     PG_PORT = os.getenv("PG_PORT")
-    con = psycopg2.connect(f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/todoapp?connect_timeout=10&application_name=todoapp")
+    
 else:
     con = sqlite3.connect("todoapp.sqlite", isolation_level=None)
 cur = con.cursor()
