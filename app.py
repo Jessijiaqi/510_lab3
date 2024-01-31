@@ -7,7 +7,7 @@ import streamlit_pydantic as sp
 from datetime import datetime
 from enum import Enum
 
-# 数据库连接
+# con = sqlite3.connect("todoapp.sqlite", isolation_level=None)
 DB_CONFIG = os.getenv("DB_TYPE")
 if DB_CONFIG == 'PG':
     PG_USER = os.getenv("PG_USER")
@@ -19,7 +19,7 @@ else:
     con = sqlite3.connect("todoapp.sqlite", isolation_level=None)
 cur = con.cursor()
 
-# 创建任务表
+# create table
 cur.execute("""
     CREATE TABLE IF NOT EXISTS tasks (
         id INTEGER PRIMARY KEY,
@@ -32,7 +32,7 @@ cur.execute("""
     );
 """)
 
-# 枚举和模型定义
+# define enum
 class State(str, Enum):
     planned = 'planned'
     in_progress = 'in-progress'
@@ -53,36 +53,36 @@ class Task(BaseModel):
 
 
 
-# 更新任务状态的函数
+# update state and save to database
 def toggle_state(current_state, row):
     new_state = 'done' if current_state != 'done' else 'planned'
     cur.execute("UPDATE tasks SET state = ? WHERE id = ?", (new_state, row[0]),)
 
-# 主函数
+# main function
 def main():
     st.title("Todo App")
 
-    # 添加新任务的表单
+    # add new task
     data = sp.pydantic_form(key="task_form", model=Task)
     if data:
         cur.execute("INSERT INTO tasks (name, description, state, created_at, created_by, category) VALUES (?, ?, ?, ?, ?, ?)",
                     (data.name, data.description, data.state.value, datetime.now(), data.created_by, data.category.value),)
 
-    # 搜索栏和分类过滤下拉菜单
+    # search and filter
     search_query = st.text_input("Search tasks", key="search_query")
     category_filter = st.selectbox("Filter by category", ["All", "school", "work", "personal"], key="category_filter")
 
-    # 构建查询语句
+    # build query
     query = "SELECT * FROM tasks WHERE name LIKE ?"
     params = [f"%{search_query}%"]
     if category_filter != "All":
         query += " AND category = ?"
         params.append(category_filter)
 
-    # 从数据库中获取数据
+    # get filtered data
     filtered_data = cur.execute(query, params).fetchall()
 
-    # 展示过滤后的任务
+    # show filtered data
     if filtered_data:
         for row in filtered_data:
             with st.container():
